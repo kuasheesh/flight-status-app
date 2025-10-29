@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Status Dashboard</title>
+    <style>
+        /* CSS: Basic styling for the dashboard */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+        }
+        .filter-buttons button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        /* Button colors */
+        #btn-over { background-color: #f44336; color: white; } 
+        #btn-running { background-color: #4CAF50; color: white; } 
+        #btn-left { background-color: #2196F3; color: white; } 
+        #btn-all { background-color: #505050; color: white; }
+        .filter-buttons button:hover {
+            opacity: 0.8;
+        }
+        .filter-buttons button.active {
+            border: 3px solid black !important;
+            opacity: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #333;
+            color: white;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>✈️ Flight Status Filter</h1>
+
+    <div class="filter-buttons">
+        <button id="btn-all" class="active">Show All</button>
+        <button id="btn-over">Over</button>
+        <button id="btn-running">Running</button>
+        <button id="btn-left">Left</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Flight</th>
+                <th>Dep</th>
+                <th>Sector</th>
+                <th>Bowser</th>
+                <th>Status</th>
+                <th>Bay</th>
+            </tr>
+        </thead>
+        <tbody id="flight-data-body">
+            <tr><td colspan="6">Loading flight data...</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        // STEP 3: PASTE YOUR CSV URL HERE!
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSl8FUN3VtzhPRQGdGeokKtnmk3yzySh9hF6pM1qESnXPYqebpHpgvhd0LW05Lr8aMCt8VdFay_qhkR/pub?gid=0&single=true&output=csv'; 
+
+        const tableBody = document.getElementById('flight-data-body');
+        const buttons = document.querySelectorAll('.filter-buttons button');
+        let flightData = []; 
+
+        // 1. Function to fetch data from the Google Sheet URL
+        async function loadData() {
+            try {
+                const response = await fetch(CSV_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const csvText = await response.text();
+                
+                // Simple CSV parsing
+                const rows = csvText.split('\n').filter(row => row.trim() !== '');
+                if (rows.length <= 1) { // 1 row is just the header
+                    tableBody.innerHTML = '<tr><td colspan="6">No flight data found.</td></tr>';
+                    return;
+                }
+                
+                const dataRows = rows.slice(1); // Skip the header row
+                
+                // Map the CSV columns to clear object keys (0-indexed)
+                flightData = dataRows.map(row => {
+                    // Split the row by comma. This is a very basic parser.
+                    const columns = row.split(',');
+                    return {
+                        flight: columns[0],
+                        dep: columns[1],
+                        sector: columns[2],
+                        bowser: columns[3],
+                        // Clean and standardize the status for easy filtering
+                        status: columns[4] ? columns[4].toLowerCase().trim() : '', 
+                        bay: columns[5]
+                    };
+                });
+
+                // Display all data initially
+                displayData(flightData);
+
+            } catch (error) {
+                console.error('Could not load data:', error);
+                tableBody.innerHTML = `<tr><td colspan="6">Error loading data: ${error.message}</td></tr>`;
+            }
+        }
+
+        // 2. Function to render the data into the HTML table
+        function displayData(data) {
+            tableBody.innerHTML = ''; // Clear existing rows
+            
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6">No flights matching this status.</td></tr>';
+                return;
+            }
+
+            data.forEach(item => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${item.flight}</td>
+                    <td>${item.dep}</td>
+                    <td>${item.sector}</td>
+                    <td>${item.bowser}</td>
+                    <td>${item.status}</td>
+                    <td>${item.bay}</td>
+                `;
+            });
+        }
+
+        // 3. Function to handle the filtering
+        function filterData(statusToFilter) {
+            let dataToDisplay = [];
+
+            // If the status is 'all', use the entire stored dataset
+            if (statusToFilter === 'all') {
+                dataToDisplay = flightData;
+            } else {
+                // Filter the dataset based on the button's status (e.g., 'over', 'running', 'left')
+                dataToDisplay = flightData.filter(flight => flight.status === statusToFilter);
+            }
+            
+            displayData(dataToDisplay);
+
+            // Manage the 'active' state on the buttons for user feedback
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.id === `btn-${statusToFilter}` || (statusToFilter === 'all' && btn.id === 'btn-all')) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // 4. Add event listeners to the buttons to trigger the filter function
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Extract the status from the button's ID (e.g., 'btn-running' -> 'running')
+                const status = button.id.split('-').pop(); 
+                filterData(status);
+            });
+        });
+
+        // Start the process: Load data when the page first opens
+        loadData();
+    </script>
+
+</body>
+</html>
