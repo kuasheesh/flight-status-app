@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flight Status Dashboard v2</title>
+    <title>Updated Flight Status Dashboard</title>
     <style>
         /* CSS: Basic styling for the dashboard */
         body {
@@ -40,11 +40,11 @@
             margin-top: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             background-color: white;
-            font-size: 14px; /* Slightly smaller font for more columns */
+            font-size: 0.9em; /* Slightly smaller font for more columns */
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 8px 10px; /* Reduced padding for more columns */
             text-align: left;
         }
         th {
@@ -56,7 +56,7 @@
 </head>
 <body>
 
-    <h1>✈️ Flight Status Filter (Updated)</h1>
+    <h1>✈️ Updated Flight Status Filter</h1>
 
     <div class="filter-buttons">
         <button id="btn-all" class="active">Show All</button>
@@ -71,24 +71,26 @@
                 <th>Dep</th>
                 <th>Sector</th>
                 <th>Bay</th>
+                <th>Crew</th>
                 <th>Bowser</th>
                 <th>Status</th>
                 <th>Comment</th>
             </tr>
         </thead>
         <tbody id="flight-data-body">
-            <tr><td colspan="7">Loading flight data...</td></tr>
+            <tr><td colspan="8">Loading flight data...</td></tr>
         </tbody>
     </table>
 
     <script>
-        // 1. IMPORTANT: Replace this placeholder with the NEW CSV URL
+        // **IMPORTANT**: Paste your Google Sheet Publish to Web CSV URL here
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSl8FUN3VtzhPRQGdGeokKtnmk3yzySh9hF6pM1qESnXPYqebpHpgvhd0LW05Lr8aMCt8VdFay_qhkR/pub?gid=0&single=true&output=csv'; 
 
         const tableBody = document.getElementById('flight-data-body');
         const buttons = document.querySelectorAll('.filter-buttons button');
         let flightData = []; 
 
+        // 1. Function to fetch data from the Google Sheet URL
         async function loadData() {
             try {
                 const response = await fetch(CSV_URL);
@@ -97,44 +99,48 @@
                 }
                 const csvText = await response.text();
                 
+                // Note: The CSV parser will need to handle the new column count (8 total columns)
                 const rows = csvText.split('\n').filter(row => row.trim() !== '');
                 if (rows.length <= 1) { 
-                    tableBody.innerHTML = '<tr><td colspan="7">No flight data found.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="8">No flight data found.</td></tr>';
                     return;
                 }
                 
-                const dataRows = rows.slice(1); // Skip header row
+                const dataRows = rows.slice(1); // Skip the header row
                 
-                // 2. UPDATED MAPPING: The indices now reflect the new column order
+                // MAPPING THE 8 NEW COLUMNS: flight dep sector bay Crew bowser status Comment
                 flightData = dataRows.map(row => {
+                    // Use a slightly more robust split for CSV that might contain commas in the comments
+                    // For simplicity with Google Sheets CSV, we will use a basic comma split, 
+                    // but be aware that comments with commas will break this simple parser.
                     const columns = row.split(',');
                     return {
-                        flight: columns[0] ? columns[0].trim() : '',
-                        dep: columns[1] ? columns[1].trim() : '',
-                        sector: columns[2] ? columns[2].trim() : '',
-                        bay: columns[3] ? columns[3].trim() : '',
-                        bowser: columns[4] ? columns[4].trim() : '',
-                        // Standardize the status column (index 5)
-                        status: columns[5] ? columns[5].toLowerCase().trim() : '', 
-                        comment: columns[6] ? columns[6].trim() : '' // New 'Comment' column
+                        flight: columns[0],   // Index 0
+                        dep: columns[1],      // Index 1
+                        sector: columns[2],   // Index 2
+                        bay: columns[3],      // Index 3
+                        crew: columns[4],     // Index 4
+                        bowser: columns[5],   // Index 5
+                        // Clean and standardize the status for easy filtering
+                        status: columns[6] ? columns[6].toLowerCase().trim() : '', // Index 6
+                        comment: columns[7]   // Index 7
                     };
                 });
 
-                // Display all data initially
                 displayData(flightData);
 
             } catch (error) {
                 console.error('Could not load data:', error);
-                // Updated colspan to 7
-                tableBody.innerHTML = `<tr><td colspan="7">Error loading data: ${error.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="8">Error loading data: ${error.message}</td></tr>`;
             }
         }
 
+        // 2. Function to render the data into the HTML table (UPDATED TO 8 COLUMNS)
         function displayData(data) {
-            tableBody.innerHTML = ''; 
+            tableBody.innerHTML = ''; // Clear existing rows
             
             if (data.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="7">No flights matching this status.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="8">No flights matching this status.</td></tr>';
                 return;
             }
 
@@ -145,20 +151,20 @@
                     <td>${item.dep}</td>
                     <td>${item.sector}</td>
                     <td>${item.bay}</td>
+                    <td>${item.crew}</td>
                     <td>${item.bowser}</td>
                     <td>${item.status}</td>
-                    <td>${item.comment}</td>
-                `;
+                    <td>${item.comment || ''}</td> `;
             });
         }
 
+        // 3. Function to handle the filtering (No change needed, it still filters by status)
         function filterData(statusToFilter) {
             let dataToDisplay = [];
 
             if (statusToFilter === 'all') {
                 dataToDisplay = flightData;
             } else {
-                // Filters for 'over' or 'running'
                 dataToDisplay = flightData.filter(flight => flight.status === statusToFilter);
             }
             
@@ -172,7 +178,7 @@
             });
         }
 
-        // Add event listeners to the buttons (Only 'all', 'over', 'running')
+        // 4. Add event listeners to the buttons 
         buttons.forEach(button => {
             button.addEventListener('click', () => {
                 const status = button.id.split('-').pop(); 
@@ -180,6 +186,7 @@
             });
         });
 
+        // Start the process: Load data when the page first opens
         loadData();
     </script>
 
