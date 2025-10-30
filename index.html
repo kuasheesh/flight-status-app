@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flight Status Dashboard</title>
+    <title>Updated Flight Status Dashboard</title>
     <style>
         /* CSS: Basic styling for the dashboard */
         body {
@@ -40,11 +40,11 @@
             margin-top: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             background-color: white;
-            font-size: 0.9em; /* Slightly smaller font for more columns */
+            font-size: 0.9em; 
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 8px 10px; /* Reduced padding for more columns */
+            padding: 8px 10px; 
             text-align: left;
         }
         th {
@@ -56,7 +56,7 @@
 </head>
 <body>
 
-    <h1>✈️ Updated Flight Status Filter</h1>
+    <h1>✈️ Flight Status Filter</h1>
 
     <div class="filter-buttons">
         <button id="btn-all" class="active">Show All</button>
@@ -83,7 +83,7 @@
     </table>
 
     <script>
-        // **IMPORTANT**: Paste your Google Sheet Publish to Web CSV URL here
+        // **IMPORTANT**: Replace this placeholder with your actual Google Sheet Publish to Web CSV URL
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTRFWctnTAbrZc0PpkIjpfeitpcjFwBzebic9cGu5uPq8PURLW94ufHKugZOeBlAg/pub?gid=284483852&single=true&output=csv'; 
 
         const tableBody = document.getElementById('flight-data-body');
@@ -94,12 +94,15 @@
         async function loadData() {
             try {
                 const response = await fetch(CSV_URL);
+                
                 if (!response.ok) {
+                    // Log the error status to the console for easier debugging
+                    console.error(`Fetch failed with status: ${response.status}`);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const csvText = await response.text();
                 
-                // Note: The CSV parser will need to handle the new column count (8 total columns)
+                // Simple parsing: split by line, filter empty lines
                 const rows = csvText.split('\n').filter(row => row.trim() !== '');
                 if (rows.length <= 1) { 
                     tableBody.innerHTML = '<tr><td colspan="8">No flight data found.</td></tr>';
@@ -108,22 +111,19 @@
                 
                 const dataRows = rows.slice(1); // Skip the header row
                 
-                // MAPPING THE 8 NEW COLUMNS: flight dep sector bay Crew bowser status Comment
+                // MAPPING THE 8 COLUMNS: flight dep sector bay Crew bowser status Comment
                 flightData = dataRows.map(row => {
-                    // Use a slightly more robust split for CSV that might contain commas in the comments
-                    // For simplicity with Google Sheets CSV, we will use a basic comma split, 
-                    // but be aware that comments with commas will break this simple parser.
-                    const columns = row.split(',');
+                    // ***FIX: Using semicolon (;) to split columns, which often fixes 400 errors for non-US locales***
+                    const columns = row.split(';'); 
                     return {
-                        flight: columns[0],   // Index 0
-                        dep: columns[1],      // Index 1
-                        sector: columns[2],   // Index 2
-                        bay: columns[3],      // Index 3
-                        crew: columns[4],     // Index 4
-                        bowser: columns[5],   // Index 5
-                        // Clean and standardize the status for easy filtering
-                        status: columns[6] ? columns[6].toLowerCase().trim() : '', // Index 6
-                        comment: columns[7]   // Index 7
+                        flight: columns[0] ? columns[0].trim() : '', 
+                        dep: columns[1] ? columns[1].trim() : '', 
+                        sector: columns[2] ? columns[2].trim() : '', 
+                        bay: columns[3] ? columns[3].trim() : '', 
+                        crew: columns[4] ? columns[4].trim() : '', 
+                        bowser: columns[5] ? columns[5].trim() : '', 
+                        status: columns[6] ? columns[6].toLowerCase().trim() : '', // Clean status text
+                        comment: columns[7] ? columns[7].trim() : ''
                     };
                 });
 
@@ -135,7 +135,7 @@
             }
         }
 
-        // 2. Function to render the data into the HTML table (UPDATED TO 8 COLUMNS)
+        // 2. Function to render the data into the HTML table (8 COLUMNS)
         function displayData(data) {
             tableBody.innerHTML = ''; // Clear existing rows
             
@@ -154,11 +154,12 @@
                     <td>${item.crew}</td>
                     <td>${item.bowser}</td>
                     <td>${item.status}</td>
-                    <td>${item.comment || ''}</td> `;
+                    <td>${item.comment || ''}</td>
+                `;
             });
         }
 
-        // 3. Function to handle the filtering (No change needed, it still filters by status)
+        // 3. Function to handle the filtering
         function filterData(statusToFilter) {
             let dataToDisplay = [];
 
@@ -192,8 +193,3 @@
 
 </body>
 </html>
-
-
-
-
-
