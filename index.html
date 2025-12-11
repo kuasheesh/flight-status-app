@@ -47,9 +47,7 @@
             <option value="RUNNING">RUNNING</option>
             <option value="OVER">OVER</option>
         </select>
-        <p style="font-size: 12px; color: #666; margin-top: 5px;">
-            Data updates automatically every 30 seconds.
-        </p>
+        <p style="font-size: 12px; color: #666; margin-top: 5px;">Data is fetched live from Google Sheets.</p>
     </div>
 
     <table>
@@ -73,7 +71,7 @@
     <script>
         // --- CONFIGURATION ---
         // Paste your "Publish to Web" CSV link here:
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSl8FUN3VtzhPRQGdGeokKtnmk3yzySh9hF6pM1qESnXPYqebpHpgvhd0LW05Lr8aMCt8VdFay_qhkR/pub?gid=0&single=true&output=csv";
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSl8FUN3VtzhPRQGdGeokKtnmk3yzySh9hF6pM1qESnXPYqebpHpgvhd0LW05Lr8aMCt8VdFay_qhkR/pub?gid=0&single=true&output=csv";
 
         let allFlightData = [];
 
@@ -85,14 +83,11 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     allFlightData = results.data;
-                    console.log("Data Updated."); // Optional: verify in console
-                    
-                    // Run the filter immediately to update the table
-                    // This ensures if you selected "RUNNING", it keeps showing "RUNNING"
-                    filterTable();
+                    renderTable(allFlightData);
                 },
                 error: function(err) {
-                    console.error("Error loading data:", err);
+                    alert("Error loading data. Please check your Google Sheet link.");
+                    console.error(err);
                 }
             });
         }
@@ -105,7 +100,7 @@
             data.forEach(row => {
                 const tr = document.createElement("tr");
                 
-                // Get Status for Coloring
+                // Get Status for Coloring (Hidden Logic)
                 const rawStatus = row['REFUELLING_STATUS'] || ""; 
                 const status = rawStatus.toUpperCase();
 
@@ -150,17 +145,9 @@
             }
         }
 
-        // --- AUTO REFRESH LOGIC ---
-        // 1. Load immediately on start
+        // Start the app
         loadData();
-
-        // 2. Set interval to load every 30 seconds (30000 milliseconds)
-        setInterval(loadData, 30000);
-
     </script>
 
 </body>
 </html>
-        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSl8FUN3VtzhPRQGdGeokKtnmk3yzySh9hF6pM1qESnXPYqebpHpgvhd0LW05Lr8aMCt8VdFay_qhkR/pub?gid=0&single=true&output=csv";
-
-       
