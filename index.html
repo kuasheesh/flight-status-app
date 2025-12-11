@@ -7,14 +7,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     
     <style>
-        /* --- CSS STYLING (Same as before) --- */
+        /* --- CSS STYLING --- */
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
         h1 { color: #333; }
+        
         .controls { margin-bottom: 20px; padding: 15px; background-color: white; border: 1px solid #ddd; border-radius: 5px; }
         select { padding: 8px; font-size: 16px; width: 300px; }
-        table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #2c3e50; color: white; }
+        
+        /* Table Style */
+        table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #2c3e50; color: white; white-space: nowrap; }
 
         /* STATUS COLORS */
         .status-running { background-color: #d4f2d4; color: black; } /* Green */
@@ -46,7 +49,11 @@
                 <th>SECTOR</th>
                 <th>CALL SIGN</th>
                 <th>BAY</th>
+                <th>ETA</th>
+                <th>CREW</th>
+                <th>BOWSER</th>
                 <th>REFUELLING STATUS</th>
+                <th>COMMENT</th>
             </tr>
         </thead>
         <tbody id="flightTableBody">
@@ -55,30 +62,29 @@
 
     <script>
         // --- CONFIGURATION ---
-        // 1. Paste your "Publish to Web" CSV link here:
+        // Paste your "Publish to Web" CSV link here:
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSl8FUN3VtzhPRQGdGeokKtnmk3yzySh9hF6pM1qESnXPYqebpHpgvhd0LW05Lr8aMCt8VdFay_qhkR/pub?gid=0&single=true&output=csv";
 
-        let allFlightData = []; // Store data here after fetching
+        let allFlightData = [];
 
-        // --- 2. FETCH DATA FROM GOOGLE SHEETS ---
+        // --- FETCH DATA ---
         function loadData() {
             Papa.parse(SHEET_URL, {
                 download: true,
-                header: true,       // Uses the first row of your sheet as keys
+                header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
                     allFlightData = results.data;
-                    console.log("Data loaded:", allFlightData); // Debugging
                     renderTable(allFlightData);
                 },
                 error: function(err) {
-                    alert("Error loading data. Check your Google Sheet link.");
+                    alert("Error loading data.");
                     console.error(err);
                 }
             });
         }
 
-        // --- 3. RENDER TABLE ---
+        // --- RENDER TABLE ---
         function renderTable(data) {
             const tableBody = document.getElementById("flightTableBody");
             tableBody.innerHTML = ""; 
@@ -86,7 +92,7 @@
             data.forEach(row => {
                 const tr = document.createElement("tr");
                 
-                // Safety check: ensure status exists, default to empty string if missing
+                // Get Status for Coloring
                 const rawStatus = row['REFUELLING_STATUS'] || ""; 
                 const status = rawStatus.toUpperCase();
 
@@ -101,21 +107,25 @@
                     tr.className = "status-default";
                 }
 
-                // Create Cells (using exact headers from Google Sheet)
+                // Create Cells (Matches Google Sheet Headers Exactly)
                 tr.innerHTML = `
-                    <td><strong>${row['FLIGHT'] || '-'}</strong></td>
-                    <td>${row['DEP'] || '-'}</td>
-                    <td>${row['SECTOR'] || '-'}</td>
-                    <td>${row['CALL_SIGN'] || '-'}</td>
-                    <td>${row['BAY'] || '-'}</td>
+                    <td><strong>${row['FLIGHT'] || ''}</strong></td>
+                    <td>${row['DEP'] || ''}</td>
+                    <td>${row['SECTOR'] || ''}</td>
+                    <td>${row['CALL_SIGN'] || ''}</td>
+                    <td>${row['BAY'] || ''}</td>
+                    <td>${row['ETA'] || ''}</td>
+                    <td>${row['CREW'] || ''}</td>
+                    <td>${row['BOWSER'] || ''}</td>
                     <td>${rawStatus}</td>
+                    <td>${row['COMMENT'] || ''}</td>
                 `;
 
                 tableBody.appendChild(tr);
             });
         }
 
-        // --- 4. FILTER LOGIC ---
+        // --- FILTER LOGIC ---
         function filterTable() {
             const filterValue = document.getElementById("statusFilter").value;
 
@@ -134,9 +144,11 @@
             }
         }
 
-        // Start the process
         loadData();
     </script>
 
 </body>
 </html>
+        
+        
+ 
