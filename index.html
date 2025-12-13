@@ -1,4 +1,4 @@
-       <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,35 +9,42 @@
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 20px;
+            /* Prevent the whole page from scrolling, force scroll on table only */
+            overflow: hidden; 
         }
         h1 {
             text-align: center;
             color: #333;
             margin-bottom: 5px;
+            font-size: 24px;
         }
         .last-updated {
             text-align: center;
             font-size: 12px;
             color: #666;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
-        /* This container helps the sticky header work if the body scrolls */
+        /* THE FIX: Create a specific scrolling window for the table */
         .table-container {
-            overflow-x: auto;
+            height: 85vh; /* Takes up 85% of the screen height */
+            overflow: auto; /* Enables both vertical and horizontal scroll here */
+            border: 1px solid #999;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
 
         table {
             width: 100%;
-            border-collapse: collapse; 
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-collapse: separate; /* Required for sticky to work well in some browsers */
+            border-spacing: 0;
         }
         
         th, td {
             padding: 12px;
             text-align: left;
-            border: 1px solid #999; 
+            border-bottom: 1px solid #999; 
+            border-right: 1px solid #999;
             font-size: 14px;
         }
 
@@ -45,16 +52,17 @@
         th {
             background-color: #333;
             color: white;
-            border: 1px solid #333;
             position: sticky;
-            top: 0;
-            z-index: 10; /* Ensures header floats above content */
-            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4); /* Small shadow for depth */
+            top: 0; /* Sticks to the top of .table-container */
+            z-index: 2; /* Ensures it floats above the data */
+            border-top: none;
         }
 
+        /* Mobile responsive adjustments */
         @media screen and (max-width: 600px) {
             table { font-size: 11px; }
-            th, td { padding: 6px; }
+            th, td { padding: 8px; }
+            .table-container { height: 80vh; } /* Slightly smaller on mobile */
         }
     </style>
 </head>
