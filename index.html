@@ -3,152 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flight Data Dashboard</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <title>Flight Status Board</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-        h1, h2 { color: #333; }
-        
-        /* Layout for two tables side by side on large screens */
-        .container { display: flex; flex-wrap: wrap; gap: 20px; }
-        .box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .main-data { flex: 2; min-width: 300px; }
-        .crew-stats { flex: 1; min-width: 250px; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #007bff; color: white; }
-        tr:nth-child(even) { background-color: #f2f2f2; }
-        
-        /* Highlight the Crew table specifically */
-        #crewTable th { background-color: #28a745; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #333;
+            color: white;
+        }
+        /* Mobile responsive adjustments */
+        @media screen and (max-width: 600px) {
+            table { font-size: 12px; }
+            th, td { padding: 8px; }
+        }
     </style>
 </head>
 <body>
 
-    <h1>Flight Operations Dashboard</h1>
+    <h1>Flight Dep & Sector Status</h1>
 
-    <div class="container">
-        <div class="box crew-stats">
-            <h2>Crew Load (Descending)</h2>
-            <p>Sorted by Total Count. Ties broken by first appearance.</p>
-            <table id="crewTable">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Crew Name</th>
-                        <th>Total Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    </tbody>
-            </table>
-        </div>
-
-        <div class="box main-data">
-            <h2>Live Flight Schedule</h2>
-            <table id="flightTable">
-                <thead>
-                    </thead>
-                <tbody>
-                    </tbody>
-            </table>
-        </div>
-    </div>
+    <table id="flightTable">
+        <thead>
+            <tr>
+                <th>Flight</th>
+                <th>Dep</th>
+                <th>Sector</th>
+                <th>Call Sign</th>
+                <th>Bay</th>
+                <th>ETA</th>
+                <th>Crew</th>
+                <th>Bowser</th>
+                <th>Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
 
     <script>
-        // PASTE YOUR PUBLISHED GOOGLE SHEET CSV LINK HERE
-        const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSl8FUN3VtzhPRQGdGeokKtnmk3yzySh9hF6pM1qESnXPYqebpHpgvhd0LW05Lr8aMCt8VdFay_qhkR/pub?gid=0&single=true&output=csv";
+        // PASTE YOUR DEPLOYMENT URL INSIDE THE QUOTES BELOW
+        const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxZ4c88cfqMzpm4nGUs5m4cEbp5QtGtNN9lQIIFVLFsMiDFJYb6MYhnN71oNaGUE9m4PQ/exec';
 
-        function init() {
-            Papa.parse(sheetURL, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    const data = results.data;
-                    displayMainTable(data);
-                    calculateAndDisplayCrewStats(data);
-                }
-            });
-        }
+        async function fetchFlightData() {
+            try {
+                const response = await fetch(SHEET_API_URL);
+                const flightList = await response.json();
+                
+                const tableBody = document.querySelector('#flightTable tbody');
+                tableBody.innerHTML = ''; 
 
-        // 1. Display the Main Flight Table
-        function displayMainTable(data) {
-            const table = document.getElementById("flightTable");
-            const thead = table.querySelector("thead");
-            const tbody = table.querySelector("tbody");
-
-            if (data.length === 0) return;
-
-            // Create Headers dynamically based on sheet
-            const headers = Object.keys(data[0]);
-            let headerRow = "<tr>";
-            headers.forEach(h => headerRow += `<th>${h}</th>`);
-            headerRow += "</tr>";
-            thead.innerHTML = headerRow;
-
-            // Create Rows
-            let bodyRows = "";
-            data.forEach(row => {
-                bodyRows += "<tr>";
-                headers.forEach(h => bodyRows += `<td>${row[h] || ''}</td>`);
-                bodyRows += "</tr>";
-            });
-            tbody.innerHTML = bodyRows;
-        }
-
-        // 2. Calculate Crew Stats (The Logic you asked for)
-        function calculateAndDisplayCrewStats(data) {
-            const crewMap = {};
-
-            data.forEach((row, index) => {
-                const crewName = row['CREW']; // Make sure your sheet column header is named CREW
-                const countVal = parseInt(row['COUNT']); // Make sure your sheet column header is named COUNT
-
-                if (crewName && !isNaN(countVal)) {
-                    if (!crewMap[crewName]) {
-                        // Initialize if we haven't seen this crew yet
-                        crewMap[crewName] = {
-                            name: crewName,
-                            total: 0,
-                            firstIndex: index // Save the index for tie-breaking
-                        };
+                flightList.forEach(row => {
+                    const tr = document.createElement('tr');
+                    
+                    // Apply row color from the sheet
+                    if(row.color !== '#ffffff') {
+                        tr.style.backgroundColor = row.color;
                     }
-                    // Add to total
-                    crewMap[crewName].total += countVal;
-                }
-            });
 
-            // Convert object to array for sorting
-            const crewArray = Object.values(crewMap);
+                    // Create cells
+                    row.data.forEach(cellData => {
+                        const td = document.createElement('td');
+                        // Format times if Google sends them as long date strings
+                        if (typeof cellData === 'string' && cellData.includes('T')) {
+                             td.textContent = cellData.substring(11, 16); 
+                        } else {
+                            td.textContent = cellData;
+                        }
+                        tr.appendChild(td);
+                    });
 
-            // SORT LOGIC:
-            // 1. Descending by Total (b.total - a.total)
-            // 2. If totals are equal, use firstIndex Ascending (a.firstIndex - b.firstIndex)
-            crewArray.sort((a, b) => {
-                if (b.total !== a.total) {
-                    return b.total - a.total;
-                } else {
-                    return a.firstIndex - b.firstIndex;
-                }
-            });
+                    tableBody.appendChild(tr);
+                });
 
-            // Display in Table
-            const tbody = document.getElementById("crewTable").querySelector("tbody");
-            let html = "";
-            crewArray.forEach((crew, i) => {
-                html += `<tr>
-                    <td>${i + 1}</td>
-                    <td>${crew.name}</td>
-                    <td>${crew.total}</td>
-                </tr>`;
-            });
-            tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                // Updated colspan to 9 to match new layout
+                document.querySelector('#flightTable tbody').innerHTML = '<tr><td colspan="9">Error loading data. Check console.</td></tr>';
+            }
         }
 
-        // Run the script
-        init();
+        fetchFlightData();
     </script>
+
 </body>
 </html>
